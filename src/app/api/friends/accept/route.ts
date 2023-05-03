@@ -9,11 +9,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
   try {
     const body = await req.json();
 
-    console.log(body);
-
     const { id: idToAdd } = z.object({ id: z.string() }).parse(body);
-
-    console.log(idToAdd);
 
     const session = await getServerSession(authOptions);
 

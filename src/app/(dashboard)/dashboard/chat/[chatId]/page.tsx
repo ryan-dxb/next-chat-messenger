@@ -88,6 +88,7 @@ const Chat = async ({ params }: ChatProps) => {
         sessionId={session.user.id}
         chatPartner={chatPartner}
         sessionImg={session.user.image}
+        chatId={chatId}
       />
       <ChatInput chatPartner={chatPartner} chatId={chatId} />
     </div>

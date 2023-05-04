@@ -1,6 +1,8 @@
 import { fetchRedis } from "@/helpers/redis";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { pusherServer } from "@/lib/pusher";
+import { toPusherKey } from "@/lib/utils";
 import { addFriendValidator } from "@/lib/validations/add-friend";
 import { getServerSession } from "next-auth";
 import { NextRequest } from "next/server";
@@ -11,8 +13,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { email: emailToAdd } = addFriendValidator.parse(body.email);
 
-    console.log(emailToAdd);
-
     // ... add friend to database
 
     // ... check for email in redis
@@ -20,8 +20,6 @@ export async function POST(req: NextRequest) {
       "get",
       `user:email:${emailToAdd}`
     )) as string;
-
-    console.log(idToAdd);
 
     const session = await getServerSession(authOptions);
 
@@ -61,6 +59,16 @@ export async function POST(req: NextRequest) {
         status: 400,
       });
     }
+
+    // Realtime Pusher notification
+    pusherServer.trigger(
+      toPusherKey(`user:${idToAdd}:incoming_friend_requests`),
+      "incoming_friend_request",
+      {
+        senderId: session.user.id,
+        senderEmail: session.user.email,
+      }
+    );
 
     // valid request, send friend request
     db.sadd(`user:${idToAdd}:incoming_friend_requests`, session.user.id);

@@ -19,7 +19,7 @@ export const getFriendsByUserId = async (userId: string) => {
       })
     );
 
-    return friendsData;
+    return friendsData as User[];
   } catch (error) {
     console.log(error);
   }

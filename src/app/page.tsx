@@ -1,16 +1,13 @@
 import { NextPage } from "next";
-import Button from "./components/ui/Button";
 
-interface HomeProps {}
+interface pageProps {}
 
-const Home: NextPage<HomeProps> = () => {
+const page: NextPage<pageProps> = () => {
   return (
-    <main className="mr-2">
-      <Button>
-        <h1>Home</h1>
-      </Button>
-    </main>
+    <>
+      <h1>page</h1>
+    </>
   );
 };
 
-export default Home;
+export default page;

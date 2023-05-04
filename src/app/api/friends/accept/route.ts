@@ -1,6 +1,8 @@
 import { fetchRedis } from "@/helpers/redis";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { pusherServer } from "@/lib/pusher";
+import { toPusherKey } from "@/lib/utils";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -34,19 +36,38 @@ export async function POST(req: NextRequest, res: NextResponse) {
 
     if (!hasPendingRequest) throw new Response("Bad Request", { status: 400 });
 
-    // Add the user to the friends list
-    await db.sadd(`user:${session.user.id}:friends`, idToAdd);
+    // Realtime Notification
+    const [userRaw, friendRaw] = (await Promise.all([
+      fetchRedis("get", `user:${session.user.id}`),
+      fetchRedis("get", `user:${idToAdd}`),
+    ])) as [string, string];
 
-    // Add the user to the other user's friends list
-    await db.sadd(`user:${idToAdd}:friends`, session.user.id);
+    const user = JSON.parse(userRaw) as User;
+    const friend = JSON.parse(friendRaw) as User;
 
-    // Remove the user from the incoming friend requests list
-    await db.srem(`user:${session.user.id}:incoming_friend_requests`, idToAdd);
+    // notify added user
+
+    await Promise.all([
+      pusherServer.trigger(
+        toPusherKey(`user:${idToAdd}:friends`),
+        "new_friend",
+        user
+      ),
+      pusherServer.trigger(
+        toPusherKey(`user:${session.user.id}:friends`),
+        "new_friend",
+        friend
+      ),
+      db.sadd(`user:${session.user.id}:friends`, idToAdd),
+      db.sadd(`user:${idToAdd}:friends`, session.user.id),
+      db.srem(`user:${session.user.id}:incoming_friend_requests`, idToAdd),
+    ]);
+
+    return new Response("OK");
 
     // Remove the user from the outgoing friend requests list (Not Implemented Yet)
 
     // Return Response
-    return new Response("OK", { status: 200 });
   } catch (error) {
     {
       if (error instanceof z.ZodError) {

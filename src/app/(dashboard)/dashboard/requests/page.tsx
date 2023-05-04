@@ -33,7 +33,7 @@ const Requests = async () => {
   );
 
   return (
-    <main className="pt-8">
+    <main className="pt-8 mx-2">
       <h1 className="font-bold text-5xl mb-8">Add a friend</h1>
       <div className="flex flex-col gap-4">
         <FriendRequests

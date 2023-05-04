@@ -1,16 +1,18 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { pusherClient } from "@/lib/pusher";
+import { cn, toPusherKey } from "@/lib/utils";
 import { Message } from "@/lib/validations/message";
 import { format } from "date-fns";
 import Image from "next/image";
-import React, { FC, useRef, useState } from "react";
+import React, { FC, useEffect, useRef, useState } from "react";
 
 interface MessagesProps {
   initialMessages: Message[];
   sessionId: string;
   sessionImg: string | null | undefined;
   chatPartner: User;
+  chatId: string;
 }
 
 const Messages: FC<MessagesProps> = ({
@@ -18,6 +20,7 @@ const Messages: FC<MessagesProps> = ({
   sessionId,
   sessionImg,
   chatPartner,
+  chatId,
 }) => {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
 
@@ -26,6 +29,25 @@ const Messages: FC<MessagesProps> = ({
   const formatTimeStamp = (timestamp: number) => {
     return format(timestamp, "HH:mm");
   };
+
+  // Realtime friend request notification
+  const messageHandler = (message: Message) => {
+    setMessages((prev) => [message, ...prev]); // Add to the beginning of the array as we have reversed the array
+  };
+
+  useEffect(() => {
+    pusherClient
+      .subscribe(toPusherKey(`chat:${chatId}`))
+      .bind("incoming_message", messageHandler);
+
+    return () => {
+      pusherClient.unsubscribe(toPusherKey(toPusherKey(`chat:${chatId}`)));
+
+      pusherClient.unbind("incoming_message", messageHandler);
+    };
+  }, [chatId]);
+
+  // End of realtime friend request
 
   return (
     <div

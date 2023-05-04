@@ -1,8 +1,10 @@
 "use client";
 
+import { pusherClient } from "@/lib/pusher";
+import { toPusherKey } from "@/lib/utils";
 import { UserIcon } from "lucide-react";
 import Link from "next/link";
-import React, { FC, useState } from "react";
+import React, { FC, useEffect, useState } from "react";
 
 interface FriendRequestSidebarOptionProps {
   initialUnseenFriendRequests: number;
@@ -16,6 +18,27 @@ const FriendRequestSidebarOption: FC<FriendRequestSidebarOptionProps> = ({
   const [unseenFriendRequests, setUnseenFriendRequests] = useState<number>(
     initialUnseenFriendRequests
   );
+
+  // Realtime friend request notification
+  const friendRequestHandler = () => {
+    setUnseenFriendRequests((prev) => prev + 1);
+  };
+
+  useEffect(() => {
+    pusherClient
+      .subscribe(toPusherKey(`user:${sessionId}:incoming_friend_requests`))
+      .bind("incoming_friend_request", friendRequestHandler);
+
+    return () => {
+      pusherClient.unsubscribe(
+        toPusherKey(`user:${sessionId}:incoming_friend_requests`)
+      );
+
+      pusherClient.unbind("incoming_friend_request", friendRequestHandler);
+    };
+  }, [sessionId]);
+
+  // End of realtime friend request
 
   return (
     <Link

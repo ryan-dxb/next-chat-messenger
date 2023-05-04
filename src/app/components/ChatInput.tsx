@@ -17,6 +17,7 @@ const ChatInput: FC<ChatInputProps> = ({ chatPartner, chatId }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const sendMessage = async () => {
+    if (inputValue.trim() === "") return;
     setIsLoading(true);
 
     try {
@@ -43,7 +44,6 @@ const ChatInput: FC<ChatInputProps> = ({ chatPartner, chatId }) => {
           onKeyDown={(event) => {
             if (event.key === "Enter" && !event.shiftKey) {
               event.preventDefault();
-              console.log(textAreaRef.current?.value);
               sendMessage();
             }
           }}

@@ -10,3 +10,7 @@ export function chatHrefContructor(id1: string, id2: string) {
 
   return `${sortedId[0]}--${sortedId[1]}`;
 }
+
+export function toPusherKey(key: string) {
+  return key.replace(/:/g, "__");
+}
